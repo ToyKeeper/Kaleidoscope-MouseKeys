@@ -13,7 +13,10 @@ uint8_t MouseKeys_::accelSpeed = 1;
 uint16_t MouseKeys_::accelDelay = 64;
 
 uint8_t MouseKeys_::wheelSpeed = 1;
-uint16_t MouseKeys_::wheelDelay = 50;
+uint16_t MouseKeys_::wheelDelay = 160;  // initial ms per scroll event
+uint16_t MouseKeys_::wheelSpeedLimit = 8;  // minimum ms per scroll event
+uint8_t MouseKeys_::wheelAccel = 64;  // how many accel steps to advance first frame
+uint8_t MouseKeys_::wheelAccelStep = 0;
 
 uint32_t MouseKeys_::accelEndTime;
 uint32_t MouseKeys_::endTime;
@@ -23,7 +26,20 @@ void MouseKeys_::scrollWheel(uint8_t keyCode) {
   if (millis() < wheelEndTime)
     return;
 
-  wheelEndTime = millis() + wheelDelay;
+  uint16_t next;
+  // ramp down from wheelDelay to wheelSpeedLimit
+  next = wheelSpeedLimit + ((255-wheelAccelStep) * wheelDelay / 256);
+  // set soonest time for next wheel event
+  wheelEndTime = millis() + next;
+  // accelerate scrolling, decelerate acceleration
+  // (because the "frames" get closer together as we accelerate)
+  uint8_t accel = wheelAccel;
+  uint8_t step = wheelAccelStep>>5;
+  while (step) {
+      step >>= 1;
+      accel >>= 1;
+  }
+  wheelAccelStep = min(255, wheelAccelStep + accel);
 
   if (keyCode & KEY_MOUSE_UP)
     kaleidoscope::hid::moveMouse(0, 0, wheelSpeed);
@@ -86,6 +102,7 @@ Key MouseKeys_::eventHandlerHook(Key mappedKey, byte row, byte col, uint8_t keyS
       endTime = millis() + speedDelay;
       accelEndTime = millis() + accelDelay;
       wheelEndTime = 0;
+      wheelAccelStep = 0;
     }
     if (keyIsPressed(keyState)) {
       if (mappedKey.keyCode & KEY_MOUSE_WHEEL) {

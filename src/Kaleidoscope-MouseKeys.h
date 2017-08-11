@@ -15,12 +15,15 @@ class MouseKeys_ : public KaleidoscopePlugin {
   static uint16_t accelDelay;
   static uint8_t wheelSpeed;
   static uint16_t wheelDelay;
+  static uint16_t wheelSpeedLimit;
+  static uint8_t wheelAccel;
 
  private:
   static uint8_t mouseMoveIntent;
   static uint32_t endTime;
   static uint32_t accelEndTime;
   static uint32_t wheelEndTime;
+  static uint8_t wheelAccelStep;
 
   static void scrollWheel(uint8_t keyCode);
   static void loopHook(bool postClear);
